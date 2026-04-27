@@ -1,0 +1,17 @@
+<h2>Search Student</h2>
+
+<form method="GET">
+    <input type="text" name="q" placeholder="Search name...">
+    <button type="submit">Search</button>
+</form>
+
+<hr>
+
+{% for s in students %}
+    <p>
+        {{ s.name }} - {{ s.student_id }}
+        <a href="{% url 'student_profile' s.pk %}">View</a>
+    </p>
+{% empty %}
+    <p>No student found</p>
+{% endfor %}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transcript</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            width: 70%;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .sub {
+            text-align: center;
+            margin-bottom: 30px;
+            color: gray;
+        }
+
+        .watermark {
+            position: absolute;
+            font-size: 60px;
+            color: rgba(0,0,0,0.05);
+            transform: rotate(-30deg);
+            top: 40%;
+            left: 20%;
+            pointer-events: none;
+        }
+
+        .info p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            text-align: center;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="watermark">UNIVERSITY</div>
+
+    <h1>XYZ UNIVERSITY</h1>
+    <div class="sub">Official Academic Transcript</div>
+
+    <div class="info">
+        <p><b>Name:</b> {{ student.name }}</p>
+        <p><b>ID:</b> {{ student.student_id }}</p>
+        <p><b>Department:</b> {{ student.department.name }}</p>
+        <p><b>CGPA:</b> {{ gpa }} / 4.00</p>
+        <p><b>Grade:</b> {{ grade }}</p>
+    </div>
+
+    <hr>
+
+    <h3>Marks</h3>
+
+    <table>
+        <tr>
+            <th>Course</th>
+            <th>Exam</th>
+            <th>Marks</th>
+        </tr>
+
+        {% for m in marks %}
+        <tr>
+            <td>{{ m.course.course_title }}</td>
+            <td>{{ m.exam.exam_type }}</td>
+            <td>{{ m.marks_obtained }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a class="btn" href="{% url 'download_transcript' student.pk %}">
+        Download PDF
+    </a>
+
+</div>
+
+</body>
+</html>
