@@ -2,33 +2,44 @@ from django.shortcuts import render, get_object_or_404
 from django.http import FileResponse
 import os
 
-from .models import Student, Result, Mark
+from .models import (
+    Student, Result, Mark,
+    Department, Notice, Message, Event
+)
+
 from .utils import calculate_student_gpa, get_letter_grade
 from .pdf_utils import generate_student_pdf
 
 
 # =========================
-# 🏠 DASHBOARD
+# 🏠 DASHBOARD (FULL DYNAMIC)
 # =========================
 def dashboard(request):
-    students_count = Student.objects.count()
-    results_count = Result.objects.count()
 
-    latest_students = Student.objects.select_related('department').order_by('-id')[:5]
-
-    # GPA distribution (REAL DATA)
-    a_plus = Result.objects.filter(cgpa__gte=3.75).count()
-    a = Result.objects.filter(cgpa__gte=3.50, cgpa__lt=3.75).count()
-    b = Result.objects.filter(cgpa__gte=3.00, cgpa__lt=3.50).count()
-    c = Result.objects.filter(cgpa__gte=2.50, cgpa__lt=3.00).count()
-    d = Result.objects.filter(cgpa__gte=2.00, cgpa__lt=2.50).count()
-    f = Result.objects.filter(cgpa__lt=2.00).count()
+    # GPA distribution (safe + dynamic)
+    gpa_data = [
+        Result.objects.filter(cgpa__gte=3.75).count(),
+        Result.objects.filter(cgpa__gte=3.50, cgpa__lt=3.75).count(),
+        Result.objects.filter(cgpa__gte=3.00, cgpa__lt=3.50).count(),
+        Result.objects.filter(cgpa__gte=2.50, cgpa__lt=3.00).count(),
+        Result.objects.filter(cgpa__gte=2.00, cgpa__lt=2.50).count(),
+        Result.objects.filter(cgpa__lt=2.00).count(),
+    ]
 
     return render(request, "dashboard.html", {
-        "students_count": students_count,
-        "results_count": results_count,
-        "latest_students": latest_students,
-        "gpa_data": [a_plus, a, b, c, d, f]
+        # 📊 CORE STATS
+        "students_count": Student.objects.count(),
+        "results_count": Result.objects.count(),
+        "departments_count": Department.objects.count(),
+
+        # 📌 LATEST DATA
+        "latest_students": Student.objects.order_by('-id')[:5],
+        "notices": Notice.objects.order_by('-id')[:5] if hasattr(__import__('core.models'), 'Notice') else [],
+        "messages": Message.objects.order_by('-id')[:5] if hasattr(__import__('core.models'), 'Message') else [],
+        "events": Event.objects.order_by('id')[:5] if hasattr(__import__('core.models'), 'Event') else [],
+
+        # 📈 CHART DATA
+        "gpa_data": gpa_data,
     })
 
 
@@ -36,10 +47,8 @@ def dashboard(request):
 # 🧑‍🎓 STUDENT LIST
 # =========================
 def student_list(request):
-    students = Student.objects.select_related('department').all()
-
     return render(request, "students.html", {
-        "students": students
+        "students": Student.objects.all()
     })
 
 
@@ -47,10 +56,8 @@ def student_list(request):
 # 📊 RESULT LIST
 # =========================
 def result_list(request):
-    results = Result.objects.select_related('student')
-
     return render(request, "results.html", {
-        "results": results
+        "results": Result.objects.select_related("student")
     })
 
 
@@ -58,81 +65,94 @@ def result_list(request):
 # 👤 STUDENT PROFILE
 # =========================
 def student_profile(request, pk):
-    student = get_object_or_404(
-        Student.objects.select_related('department'),
-        pk=pk
-    )
+    student = get_object_or_404(Student, pk=pk)
 
-    marks = Mark.objects.filter(student=student).select_related('course', 'exam')
+    marks = Mark.objects.filter(student=student).select_related("course", "exam")
 
     gpa, _ = calculate_student_gpa(student)
-    letter = get_letter_grade(gpa)
+    grade = get_letter_grade(gpa)
 
     return render(request, "student_profile.html", {
         "student": student,
         "marks": marks,
         "gpa": gpa,
-        "grade": letter
+        "grade": grade
     })
 
 
 # =========================
-# 📄 LIVE TRANSCRIPT (HTML)
+# 📄 TRANSCRIPT (HTML)
 # =========================
 def student_transcript(request, pk):
-    student = get_object_or_404(
-        Student.objects.select_related('department'),
-        pk=pk
-    )
+    student = get_object_or_404(Student, pk=pk)
 
-    marks = Mark.objects.filter(student=student).select_related('course', 'exam')
+    marks = Mark.objects.filter(student=student).select_related("course", "exam")
 
     gpa, _ = calculate_student_gpa(student)
-    letter = get_letter_grade(gpa)
+    grade = get_letter_grade(gpa)
 
     return render(request, "student_transcript.html", {
         "student": student,
         "marks": marks,
         "gpa": gpa,
-        "grade": letter
+        "grade": grade
     })
 
 
 # =========================
-# 📄 DOWNLOAD TRANSCRIPT (PDF FIXED)
+# 📥 DOWNLOAD PDF
 # =========================
 def download_transcript(request, pk):
     student = get_object_or_404(Student, pk=pk)
 
     file_path = generate_student_pdf(student)
 
-    # 🔥 safety check
-    if not os.path.exists(file_path):
-        raise FileNotFoundError("PDF generation failed")
-
-    response = FileResponse(open(file_path, 'rb'), as_attachment=True)
-
-    # 💣 CACHE FIX (IMPORTANT)
-    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response["Pragma"] = "no-cache"
-    response["Expires"] = "0"
-
-    response["Content-Disposition"] = (
-        f'attachment; filename="{student.student_id}_transcript.pdf"'
+    return FileResponse(
+        open(file_path, 'rb'),
+        as_attachment=True,
+        filename=f"{student.student_id}_transcript.pdf"
     )
 
-    return response
-
 
 # =========================
-# 🔍 SEARCH STUDENT
+# 🔍 SEARCH
 # =========================
 def search_student(request):
-    query = request.GET.get("q")
-
-    students = Student.objects.filter(name__icontains=query) if query else []
+    q = request.GET.get("q")
+    students = Student.objects.filter(name__icontains=q) if q else []
 
     return render(request, "search.html", {
-        "students": students,
-        "query": query
+        "students": students
+    })
+
+    from django.db.models import Count
+from .models import Student, Result, Department, Notice, Message, Event
+
+
+def dashboard(request):
+
+    # 📊 GPA breakdown (REAL dynamic)
+    gpa_data = [
+        Result.objects.filter(cgpa__gte=3.75).count(),
+        Result.objects.filter(cgpa__gte=3.50, cgpa__lt=3.75).count(),
+        Result.objects.filter(cgpa__gte=3.00, cgpa__lt=3.50).count(),
+        Result.objects.filter(cgpa__gte=2.50, cgpa__lt=3.00).count(),
+        Result.objects.filter(cgpa__gte=2.00, cgpa__lt=2.50).count(),
+        Result.objects.filter(cgpa__lt=2.00).count(),
+    ]
+
+    return render(request, "dashboard.html", {
+        # 📌 COUNTS (REAL TIME)
+        "students_count": Student.objects.count(),
+        "results_count": Result.objects.count(),
+        "departments_count": Department.objects.count(),
+
+        # 📌 LATEST DATA
+        "latest_students": Student.objects.order_by("-id")[:5],
+        "notices": Notice.objects.order_by("-id")[:5],
+        "messages": Message.objects.order_by("-id")[:5],
+        "events": Event.objects.order_by("date")[:5],
+
+        # 📊 CHART
+        "gpa_data": gpa_data,
     })

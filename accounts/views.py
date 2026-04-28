@@ -4,41 +4,31 @@ from django.contrib.auth.decorators import login_required
 from .decorators import role_required
 
 
-# ---------------- LOGIN ----------------
 def login_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        user = authenticate(
+            request,
+            username=request.POST.get("username"),
+            password=request.POST.get("password")
+        )
 
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
+        if user:
             login(request, user)
 
-            # ROLE BASED REDIRECT
             if user.role == "admin":
                 return redirect("/admin-dashboard/")
             elif user.role == "teacher":
                 return redirect("/teacher-dashboard/")
-            elif user.role == "student":
-                return redirect("/student-dashboard/")
             else:
-                return redirect("/login/")
-
-        return render(request, "accounts/login.html", {
-            "error": "Invalid credentials"
-        })
+                return redirect("/student-dashboard/")
 
     return render(request, "accounts/login.html")
 
 
-# ---------------- LOGOUT ----------------
 def logout_view(request):
     logout(request)
     return redirect("/login/")
 
-
-# ---------------- DASHBOARDS (SECURED) ----------------
 
 @login_required
 @role_required("admin")

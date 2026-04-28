@@ -1,8 +1,8 @@
 from django.contrib import admin
 from .models import (
     Student, Department, Course, CourseRegistration,
-    Exam, Mark, GradeScale, Result
-)
+    Exam, Mark, GradeScale, Result, Notice, Message, Event,
+    )
 
 from .utils import calculate_student_gpa, save_student_result
 
@@ -10,52 +10,33 @@ from .utils import calculate_student_gpa, save_student_result
 # =========================
 # 🎨 ADMIN BRANDING
 # =========================
-admin.site.site_header = "🎓 Student Management System"
+admin.site.site_header = "🎓 University SMS Admin Panel"
 admin.site.site_title = "SMS Admin"
-admin.site.index_title = "Dashboard"
+admin.site.index_title = "Smart Academic Dashboard"
 
 
 # =========================
 # 🔥 ACTION: Generate Result
 # =========================
+@admin.action(description="Generate CGPA Result")
 def generate_result(modeladmin, request, queryset):
     for student in queryset:
         save_student_result(student)
 
-generate_result.short_description = "Generate Result (CGPA)"
-
 
 # =========================
-# 📌 INLINE (Course Registration inside Student)
+# 🏫 DEPARTMENT ADMIN
 # =========================
-class CourseRegistrationInline(admin.TabularInline):
-    model = CourseRegistration
-    extra = 1
-
-
-# =========================
-# 🧑‍🎓 STUDENT ADMIN
-# =========================
-class StudentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'student_id', 'department', 'get_gpa')
-    search_fields = ('name', 'student_id', 'email')
-    list_filter = ('department', 'batch')
-    ordering = ('student_id',)
-
-    inlines = [CourseRegistrationInline]
-
-    actions = [generate_result]
-
-    def get_gpa(self, obj):
-        gpa, grade = calculate_student_gpa(obj)
-        return f"{gpa} / 4.00 ({grade})"
-
-    get_gpa.short_description = "CGPA"
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code')
+    search_fields = ('name', 'code')
 
 
 # =========================
 # 📚 COURSE ADMIN
 # =========================
+@admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('course_code', 'course_title', 'credit', 'department')
     search_fields = ('course_code', 'course_title')
@@ -63,8 +44,34 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 # =========================
+# 🧑‍🎓 STUDENT ADMIN
+# =========================
+class CourseRegistrationInline(admin.TabularInline):
+    model = CourseRegistration
+    extra = 1
+
+
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'student_id', 'department', 'batch', 'get_gpa')
+    search_fields = ('name', 'student_id', 'email')
+    list_filter = ('department', 'batch')
+    ordering = ('student_id',)
+
+    inlines = [CourseRegistrationInline]
+    actions = [generate_result]
+
+    def get_gpa(self, obj):
+        gpa, grade = calculate_student_gpa(obj)
+        return f"{gpa:.2f} ({grade})"
+
+    get_gpa.short_description = "CGPA"
+
+
+# =========================
 # 🧪 EXAM ADMIN
 # =========================
+@admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
     list_display = ('course', 'exam_type', 'total_marks', 'weight')
     list_filter = ('exam_type', 'course')
@@ -82,6 +89,7 @@ class ExamAdmin(admin.ModelAdmin):
 # =========================
 # 🧾 MARK ADMIN
 # =========================
+@admin.register(Mark)
 class MarkAdmin(admin.ModelAdmin):
     list_display = (
         'student',
@@ -93,7 +101,6 @@ class MarkAdmin(admin.ModelAdmin):
 
     list_filter = ('exam__exam_type', 'course', 'student')
     search_fields = ('student__name', 'course__course_title')
-
     list_editable = ('marks_obtained',)
 
     def exam_type_display(self, obj):
@@ -109,12 +116,13 @@ class MarkAdmin(admin.ModelAdmin):
 # =========================
 # 📊 RESULT ADMIN
 # =========================
+@admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
-    list_display = ('student', 'cgpa', 'grade', 'semester')
+    list_display = ('student', 'cgpa', 'grade', 'semester', 'created_at')
     list_filter = ('semester',)
     search_fields = ('student__name',)
 
-    readonly_fields = ('cgpa', 'grade')
+    readonly_fields = ('cgpa', 'grade', 'created_at')
 
     def save_model(self, request, obj, form, change):
         gpa, grade = calculate_student_gpa(obj.student)
@@ -124,21 +132,14 @@ class ResultAdmin(admin.ModelAdmin):
 
 
 # =========================
-# 🏫 DEPARTMENT ADMIN
+# 📘 GRADE SCALE ADMIN
 # =========================
-class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code')
-    search_fields = ('name', 'code')
+@admin.register(GradeScale)
+class GradeScaleAdmin(admin.ModelAdmin):
+    list_display = ('grade', 'point', 'min_marks', 'max_marks')
 
 
-# =========================
-# 🎯 REGISTER ALL
-# =========================
-admin.site.register(Student, StudentAdmin)
-admin.site.register(Department, DepartmentAdmin)
-admin.site.register(Course, CourseAdmin)
-admin.site.register(CourseRegistration)
-admin.site.register(Exam, ExamAdmin)
-admin.site.register(Mark, MarkAdmin)
-admin.site.register(GradeScale)
-admin.site.register(Result, ResultAdmin)
+
+admin.site.register(Notice)
+admin.site.register(Message)
+admin.site.register(Event)

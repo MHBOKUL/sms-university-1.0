@@ -1,48 +1,243 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>University SMS Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-{% block content %}
+<style>
+:root{
+    --bg:#f4f7ff;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --primary:#2563eb;
+    --shadow:0 10px 25px rgba(0,0,0,0.06);
+}
 
-<h2 style="margin-bottom:10px;">📊 Dashboard Overview</h2>
+body{
+    margin:0;
+    font-family:system-ui;
+    background:var(--bg);
+    color:var(--text);
+}
 
-<div class="cards">
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 24px;
+    background:var(--card);
+    box-shadow:var(--shadow);
+}
 
-    <div class="card blue">
-        <h3>👨‍🎓 Students</h3>
-        <h1>{{ students_count }}</h1>
+.brand{
+    font-weight:800;
+}
+
+.btn{
+    border:none;
+    padding:8px 14px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.login{
+    background:#22c55e;
+    color:white;
+}
+
+.container{
+    width:92%;
+    margin:auto;
+    padding:25px 0;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.card{
+    background:var(--card);
+    padding:18px;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+}
+
+.card h3{
+    margin:0;
+    color:var(--muted);
+    font-size:14px;
+}
+
+.card p{
+    font-size:26px;
+    margin:10px 0 0;
+    font-weight:700;
+}
+
+/* MAIN */
+.main{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:15px;
+    margin-top:20px;
+}
+
+.box{
+    background:var(--card);
+    padding:15px;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+}
+
+/* chat */
+.chat{
+    height:180px;
+    overflow:auto;
+}
+
+.msg{
+    padding:6px 10px;
+    background:#f1f5f9;
+    margin:5px 0;
+    border-radius:8px;
+}
+
+/* notice */
+.notice{
+    padding:8px;
+    border-left:3px solid var(--primary);
+    margin-bottom:8px;
+    background:#f8fafc;
+}
+
+/* table */
+table{
+    width:100%;
+    font-size:14px;
+}
+
+td{
+    padding:8px;
+    border-bottom:1px solid #e2e8f0;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP -->
+<div class="topbar">
+    <div class="brand">🎓 University SMS Dashboard</div>
+
+    <!-- ONLY LOGIN -->
+    <a href="{% url 'login' %}">
+        <button class="btn login">Login</button>
+    </a>
+</div>
+
+<div class="container">
+
+<!-- STATS -->
+<div class="grid">
+
+    <div class="card">
+        <h3>Total Students</h3>
+        <p>{{ students_count }}</p>
     </div>
 
-    <div class="card green">
-        <h3>📄 Results</h3>
-        <h1>{{ results_count }}</h1>
+    <div class="card">
+        <h3>Total Results</h3>
+        <p>{{ results_count }}</p>
     </div>
 
-    <div class="card purple">
-        <h3>⚡ Status</h3>
-        <h1>Active</h1>
+    <div class="card">
+        <h3>Departments</h3>
+        <p>{{ departments_count }}</p>
     </div>
 
 </div>
 
-<h3 style="margin-top:30px;">📚 Latest Students</h3>
+<!-- MAIN -->
+<div class="main">
 
-<table>
-    <tr>
-        <th>Name</th>
-        <th>ID</th>
-        <th>Dept</th>
-        <th>Action</th>
-    </tr>
+    <!-- LEFT -->
+    <div class="box">
 
-    {% for s in latest_students %}
-    <tr>
-        <td>{{ s.name }}</td>
-        <td>{{ s.student_id }}</td>
-        <td>{{ s.department.name }}</td>
-        <td>
-            <a href="{% url 'student_profile' s.id %}" style="color:#3b82f6;">View</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+        <h3>📊 GPA Chart</h3>
+        <canvas id="chart"></canvas>
 
-{% endblock %}
+        <h3 style="margin-top:20px;">📌 Latest Students</h3>
+
+        <table>
+            {% for s in latest_students %}
+            <tr>
+                <td>{{ s.name }}</td>
+                <td>{{ s.student_id }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+
+        <!-- CHAT -->
+        <div class="box">
+            <h3>💬 Chat</h3>
+            <div class="chat">
+                {% for msg in chat_messages %}
+                    <div class="msg">{{ msg }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- NOTICE -->
+        <div class="box" style="margin-top:15px;">
+            <h3>📢 Notice Board</h3>
+
+            {% for n in notices %}
+                <div class="notice">{{ n }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- DEPARTMENTS -->
+        <div class="box" style="margin-top:15px;">
+            <h3>🏢 Departments</h3>
+
+            {% for d in departments %}
+                <div class="notice">{{ d.name }} ({{ d.code }})</div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+const ctx = document.getElementById('chart').getContext('2d');
+
+new Chart(ctx,{
+    type:'bar',
+    data:{
+        labels: {{ gpa_labels|safe }},
+        datasets:[{
+            data: {{ gpa_data|safe }},
+            backgroundColor:"#2563eb"
+        }]
+    },
+    options:{
+        plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true}}
+    }
+});
+</script>
+
+</body>
+</html>

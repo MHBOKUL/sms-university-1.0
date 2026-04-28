@@ -5,14 +5,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # 🛠 Admin panel
     path('admin/', admin.site.urls),
 
-    # 🏠 Root → redirect to dashboard
+    # 🏠 Core app (Dashboard, Students, Results)
     path('', include('core.urls')),
 
-    # 🔐 Auth system
-    path('accounts/', include('accounts.urls')),
+    # 🔐 Accounts app (Login, Logout, Dashboards)
+    path('', include('accounts.urls')),
 ]
 
+# 📦 Media files (images, uploads)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
