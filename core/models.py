@@ -6,7 +6,7 @@ class Department(models.Model):
     code = models.CharField(max_length=10)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.code})"
 
 
 class Student(models.Model):
@@ -18,7 +18,7 @@ class Student(models.Model):
     email = models.EmailField()
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.student_id})"
 
 
 class Course(models.Model):
@@ -28,7 +28,7 @@ class Course(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.course_title
+        return f"{self.course_title} ({self.course_code})"
 
 
 class CourseRegistration(models.Model):
@@ -37,11 +37,10 @@ class CourseRegistration(models.Model):
     semester = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.student.name} - {self.course.course_title}"
+        return f"{self.student} - {self.course}"
 
 
 class Exam(models.Model):
-
     EXAM_TYPES = [
         ('CT', 'Class Test'),
         ('MID', 'Mid Term'),
@@ -51,12 +50,10 @@ class Exam(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     exam_type = models.CharField(max_length=10, choices=EXAM_TYPES)
     total_marks = models.IntegerField()
-
-    # 🔥 NEW FIELD
-    weight = models.FloatField(help_text="Enter percentage weight (e.g. 20, 30, 50)")
+    weight = models.FloatField(default=0)
 
     def __str__(self):
-        return f"{self.course.course_title} - {self.exam_type}"
+        return f"{self.course} - {self.get_exam_type_display()}"
 
 
 class Mark(models.Model):
@@ -66,7 +63,7 @@ class Mark(models.Model):
     marks_obtained = models.FloatField()
 
     def __str__(self):
-        return f"{self.student.name} - {self.course.course_title}"
+        return f"{self.student} - {self.course}"
 
 
 class GradeScale(models.Model):
@@ -76,7 +73,7 @@ class GradeScale(models.Model):
     point = models.FloatField()
 
     def __str__(self):
-        return self.grade
+        return f"{self.grade} ({self.point})"
 
 
 class Result(models.Model):
@@ -84,8 +81,7 @@ class Result(models.Model):
     cgpa = models.FloatField()
     grade = models.CharField(max_length=5)
     semester = models.CharField(max_length=20, null=True, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.student.name} - {self.cgpa}"
+        return f"{self.student} - {self.cgpa}"

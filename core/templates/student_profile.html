@@ -1,58 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Student Profile</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h2>🎓 Student Profile</h2>
+{% block content %}
 
-<p><b>Name:</b> {{ student.name }}</p>
-<p><b>ID:</b> {{ student.student_id }}</p>
-<p><b>Department:</b> {{ student.department.name }}</p>
+<h2>{{ student.name }} Profile</h2>
 
-<hr>
+<p>ID: {{ student.student_id }}</p>
+<p>Department: {{ student.department.name }}</p>
 
-<h3>📊 Academic Result</h3>
+<h3>Marks</h3>
 
-<p><b>CGPA:</b> {{ gpa }} / 4.00</p>
-<p><b>Grade:</b> {{ grade }}</p>
+<ul>
+{% for m in marks %}
+    <li>{{ m.course.course_title }} - {{ m.marks_obtained }}</li>
+{% endfor %}
+</ul>
 
-<hr>
+<a href="{% url 'download_transcript' student.id %}">Download PDF</a>
 
-<h3>📚 Marks Details</h3>
-
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <th>Course</th>
-        <th>Exam</th>
-        <th>Marks Obtained</th>
-        <th>Total Marks</th>
-    </tr>
-
-    {% for m in marks %}
-    <tr>
-        <td>{{ m.course.course_title }}</td>
-        <td>{{ m.exam.exam_type }}</td>
-        <td>{{ m.marks_obtained }}</td>
-        <td>{{ m.exam.total_marks }}</td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan="4">No marks found</td>
-    </tr>
-    {% endfor %}
-</table>
-
-<br>
-
-<a href="{% url 'student_transcript' student.pk %}">
-    View Transcript
-</a>
-
-<a href="{% url 'download_transcript' student.pk %}">
-    Download PDF
-</a>
-
-</body>
-</html>
+{% endblock %}

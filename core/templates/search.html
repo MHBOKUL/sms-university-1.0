@@ -1,7 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <h2>Search Student</h2>
 
-<form method="GET">
-    <input type="text" name="q" placeholder="Search name...">
+<form method="get">
+    <input type="text" name="q" placeholder="Enter name">
     <button type="submit">Search</button>
 </form>
 
@@ -9,9 +13,9 @@
 
 {% for s in students %}
     <p>
-        {{ s.name }} - {{ s.student_id }}
-        <a href="{% url 'student_profile' s.pk %}">View</a>
+        {{ s.name }} -
+        <a href="{% url 'student_profile' s.id %}">View</a>
     </p>
-{% empty %}
-    <p>No student found</p>
 {% endfor %}
+
+{% endblock %}
