@@ -52,7 +52,6 @@ body{
     padding:25px 0;
 }
 
-/* GRID */
 .grid{
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -78,7 +77,6 @@ body{
     font-weight:700;
 }
 
-/* MAIN */
 .main{
     display:grid;
     grid-template-columns:2fr 1fr;
@@ -93,7 +91,6 @@ body{
     box-shadow:var(--shadow);
 }
 
-/* chat */
 .chat{
     height:180px;
     overflow:auto;
@@ -106,7 +103,6 @@ body{
     border-radius:8px;
 }
 
-/* notice */
 .notice{
     padding:8px;
     border-left:3px solid var(--primary);
@@ -114,7 +110,6 @@ body{
     background:#f8fafc;
 }
 
-/* table */
 table{
     width:100%;
     font-size:14px;
@@ -129,11 +124,9 @@ td{
 
 <body>
 
-<!-- TOP -->
 <div class="topbar">
     <div class="brand">🎓 University SMS Dashboard</div>
 
-    <!-- ONLY LOGIN -->
     <a href="{% url 'login' %}">
         <button class="btn login">Login</button>
     </a>
@@ -178,6 +171,10 @@ td{
                 <td>{{ s.name }}</td>
                 <td>{{ s.student_id }}</td>
             </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No students</td>
+            </tr>
             {% endfor %}
         </table>
 
@@ -190,8 +187,12 @@ td{
         <div class="box">
             <h3>💬 Chat</h3>
             <div class="chat">
-                {% for msg in chat_messages %}
-                    <div class="msg">{{ msg }}</div>
+                {% for msg in messages %}
+                    <div class="msg">
+                        <b>{{ msg.user }}</b>: {{ msg.text }}
+                    </div>
+                {% empty %}
+                    <div class="msg">No messages</div>
                 {% endfor %}
             </div>
         </div>
@@ -201,7 +202,9 @@ td{
             <h3>📢 Notice Board</h3>
 
             {% for n in notices %}
-                <div class="notice">{{ n }}</div>
+                <div class="notice">{{ n.title }}</div>
+            {% empty %}
+                <div class="notice">No notices</div>
             {% endfor %}
         </div>
 
@@ -210,7 +213,9 @@ td{
             <h3>🏢 Departments</h3>
 
             {% for d in departments %}
-                <div class="notice">{{ d.name }} ({{ d.code }})</div>
+                <div class="notice">{{ d.name }}</div>
+            {% empty %}
+                <div class="notice">No departments</div>
             {% endfor %}
         </div>
 
@@ -220,15 +225,21 @@ td{
 
 </div>
 
+{{ gpa_labels|json_script:"gpa-labels" }}
+{{ gpa_data|json_script:"gpa-data" }}
+
 <script>
 const ctx = document.getElementById('chart').getContext('2d');
+
+const labels = JSON.parse(document.getElementById('gpa-labels').textContent);
+const data = JSON.parse(document.getElementById('gpa-data').textContent);
 
 new Chart(ctx,{
     type:'bar',
     data:{
-        labels: {{ gpa_labels|safe }},
+        labels: labels,
         datasets:[{
-            data: {{ gpa_data|safe }},
+            data: data,
             backgroundColor:"#2563eb"
         }]
     },

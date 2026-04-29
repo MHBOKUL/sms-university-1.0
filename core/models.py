@@ -19,9 +19,9 @@ class Student(models.Model):
     name = models.CharField(max_length=100)
     student_id = models.CharField(max_length=50, unique=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    batch = models.CharField(max_length=20)
-    phone = models.CharField(max_length=20)
-    email = models.EmailField()
+    batch = models.CharField(max_length=20, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.student_id})"
@@ -33,7 +33,7 @@ class Student(models.Model):
 class Course(models.Model):
     course_code = models.CharField(max_length=20)
     course_title = models.CharField(max_length=100)
-    credit = models.FloatField()
+    credit = models.FloatField(default=3)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -68,7 +68,7 @@ class Exam(models.Model):
     weight = models.FloatField(default=0)
 
     def __str__(self):
-        return f"{self.course} - {self.get_exam_type_display()}"
+        return f"{self.course} - {self.exam_type}"
 
 
 # =========================
@@ -94,7 +94,7 @@ class GradeScale(models.Model):
     point = models.FloatField()
 
     def __str__(self):
-        return f"{self.grade} ({self.point})"
+        return self.grade
 
 
 # =========================
@@ -112,7 +112,7 @@ class Result(models.Model):
 
 
 # =========================
-# 📢 NOTICE BOARD (DASHBOARD)
+# 📢 NOTICE
 # =========================
 class Notice(models.Model):
     title = models.CharField(max_length=255)
@@ -123,38 +123,20 @@ class Notice(models.Model):
         return self.title
 
 
-# =========================
-# 💬 CHAT / MESSAGES
-# =========================
 class Message(models.Model):
     user = models.CharField(max_length=100)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user}: {self.text[:20]}"
 
-
-# =========================
-# 📅 EVENTS (CALENDAR)
-# =========================
 class Event(models.Model):
     title = models.CharField(max_length=255)
     date = models.DateField()
     description = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return self.title
 
-
-# =========================
-# 🔔 NOTIFICATIONS (OPTIONAL SAAS FEATURE)
-# =========================
 class Notification(models.Model):
     user = models.CharField(max_length=100)
     text = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.text
